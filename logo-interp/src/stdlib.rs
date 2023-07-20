@@ -54,6 +54,13 @@ pub fn add_stdlib<S: 'static>(es: &mut EState<S>) {
     es.functions.insert("not".to_string(), Function::from_fn1(not::<S>));
     es.functions.insert("if".to_string(), Function::from_proc2(if_fn::<S>));
     es.functions.insert("ifelse".to_string(), Function::from_proc3(if_else_fn::<S>));
+
+    es.functions.insert("make".to_string(), Function::from_proc2(make::<S>));
+    es.functions.insert("clearname".to_string(), Function::from_proc1(clearname::<S>));
+    es.functions.insert("clearnames".to_string(), Function::from_proc(clearnames::<S>));
+    es.functions.insert("name?".to_string(), Function::from_fn1(name::<S>));
+    es.functions.insert("names".to_string(), Function::from_fn(names::<S>));
+    es.functions.insert("thing".to_string(), Function::from_fn1(thing::<S>));
 }
 
 fn repeat<S>(state: &mut EState<S>, n: i32, cmd: Vec<LogoValue>) -> Result<(), String> {
@@ -296,4 +303,39 @@ fn if_else_fn<S>(state: &mut EState<S>, a: bool, cmd_true: Vec<LogoValue>, cmd_f
         execute(state, &cmd_false)?;
     }
     Ok(())
+}
+
+
+fn make<S>(state: &mut EState<S>, name: String, val: LogoValue) -> Result<(), String> {
+    state.vars.insert(name, val);
+    Ok(())
+}
+
+fn clearname<S>(state: &mut EState<S>, name: String) -> Result<(), String> {
+    state.vars.remove(name.as_str());
+    Ok(())
+}
+
+fn clearnames<S>(state: &mut EState<S>) -> Result<(), String> {
+    state.vars.clear();
+    Ok(())
+}
+
+fn name<S>(state: &mut EState<S>, name: String) -> Result<bool, String> {
+    Ok(state.vars.contains_key(name.as_str()))
+}
+
+fn names<S>(state: &mut EState<S>) -> Result<Vec<LogoValue>, String> {
+    let mut result = Vec::with_capacity(state.vars.len());
+    for key in state.vars.keys() {
+        result.push(LogoValue::String(key.clone()));
+    }
+    Ok(result)
+}
+
+fn thing<S>(state: &mut EState<S>, name: String) -> Result<LogoValue, String> {
+    if !state.vars.contains_key(name.as_str()) {
+        return Err("No such variable".to_string());
+    }
+    Ok(state.vars[name.as_str()].clone())
 }
