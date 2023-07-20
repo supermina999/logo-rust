@@ -1,37 +1,102 @@
 <!doctype html>
-<html lang="en-US">
+<html lang="en-US" style="height: 100%;">
   <head>
     <meta charset="utf-8" />
-    <title>hello-wasm example</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Logo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
   </head>
-  <body>
-    <canvas id="canvas" width="800" height="450" style="image-rendering: pixelated;"></canvas>
+  <body style="height: 100%;">
+    <table style="width: 100%; height: 100%;">
+      <thead></thead>
+      <tbody>
+        <tr>
+          <td style="width: 25%; height: 100%;">
+            <table style="width: 100%; height: 100%;">
+              <thead></thead>
+              <tbody>
+                <tr><td style="width: 100%; height: 5%; text-align: center;">
+                  <h3>Procedures</h3>
+                </td></tr>
+                <tr><td style="width: 100%; height: 95%;">
+                  <textarea id="proc_input" class="form-control" style="width: 100%; height: 100%; resize: none;"></textarea>
+                </td></tr>
+              </tbody>
+            </table>
+          </td>
+          <td style="width: 75%; height: 100%;">
+            <table style="width: 100%; height: 100%;">
+              <thead></thead>
+              <tbody>
+                <tr>
+                  <td style="width: 100%; height: 70%; text-align: center; background-color: lightgray; border: 1px solid black;">
+                    <canvas id="canvas" width="800" height="450" style="image-rendering: pixelated; border: 1px solid black;"></canvas>
+                  </td>
+                </tr>
+                <tr style="width: 100%; height: 15%; border: 1px solid black;">
+                  <td>
+                    <div id="logs" style="width: 100%; height: 100%; overflow-x: hidden; overflow-y: auto; text-align: left; background-color: rgb(250, 250, 250);"></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="width: 100%; height: 5%;">
+                    <table style="width: 100%; height: 100%;">
+                      <tr>
+                        <td style="padding-top: 0px; padding-right: 7px; padding-bottom: 0px; padding-left: 5px;">
+                          Commands:
+                        </td> 
+                        <td style="width: 100%;">
+                          <input id="cmd_input" class="form-control" style="width: 100%;">
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+          </td>
+        </tr>
+      </tbody>
+    </table>
     <script type="module">
       import init, { context_create, context_render, context_get_state } from "./pkg/logo_img_render.js";
       init().then(() => {
         const canvas = document.getElementById("canvas");
+        const logs = document.getElementById("logs");
+        const cmdInput = document.getElementById("cmd_input");
 
         let context = context_create(canvas.width, canvas.height);
-        let renderData;
-        try {
-          renderData = context_render(context, "to square :x repeat 3 [fd :x rt 90] end", "square 30 square 40 square 50");
+
+        let render = function(cmd) {
+          let procInput = document.getElementById("proc_input").value;
+          let renderData;
+          try {
+            renderData = context_render(context, procInput, cmd);
+          }
+          catch(e) {
+            logs.innerHTML += e + "<br/>";
+            return;
+          }
+          const ctx = canvas.getContext("2d");
+          const imageData = ctx.createImageData(canvas.width, canvas.height);
+          for (let i = 0; i < imageData.data.length; i += 4) {
+            imageData.data[i] = renderData[i+2];
+            imageData.data[i+1] = renderData[i+1];
+            imageData.data[i+2] = renderData[i];
+            imageData.data[i+3] = renderData[i+3];
+          }
+          ctx.putImageData(imageData, 0, 0);
         }
-        catch(e) {
-          alert(e);
-        }
-        let state = context_get_state(context);
-        console.log(state.turtle_pos.x);
-        
-        const ctx = canvas.getContext("2d");
-        const imageData = ctx.createImageData(canvas.width, canvas.height);
-        for (let i = 0; i < imageData.data.length; i += 4) {
-          imageData.data[i] = renderData[i+2];
-          imageData.data[i+1] = renderData[i+1];
-          imageData.data[i+2] = renderData[i];
-          imageData.data[i+3] = renderData[i+3];
-        }
-        ctx.putImageData(imageData, 0, 0);
+        render("");
+
+        cmdInput.addEventListener("keyup", ({key}) => {
+          if (key === "Enter") {
+            logs.innerHTML += cmdInput.value + "<br/>";
+            render(cmdInput.value);
+            cmdInput.value = "";
+            logs.scrollTop = logs.scrollHeight;
+          }
+        })
       });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
   </body>
 </html>
