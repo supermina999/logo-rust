@@ -307,12 +307,12 @@ fn if_else_fn<S>(state: &mut EState<S>, a: bool, cmd_true: Vec<LogoValue>, cmd_f
 
 
 fn make<S>(state: &mut EState<S>, name: String, val: LogoValue) -> Result<(), String> {
-    state.vars.insert(name, val);
+    state.vars.insert(name.to_lowercase(), val);
     Ok(())
 }
 
 fn clearname<S>(state: &mut EState<S>, name: String) -> Result<(), String> {
-    state.vars.remove(name.as_str());
+    state.vars.remove(name.to_lowercase().as_str());
     Ok(())
 }
 
@@ -322,7 +322,7 @@ fn clearnames<S>(state: &mut EState<S>) -> Result<(), String> {
 }
 
 fn name<S>(state: &mut EState<S>, name: String) -> Result<bool, String> {
-    Ok(state.vars.contains_key(name.as_str()))
+    Ok(state.vars.contains_key(name.to_lowercase().as_str()))
 }
 
 fn names<S>(state: &mut EState<S>) -> Result<Vec<LogoValue>, String> {
@@ -334,6 +334,7 @@ fn names<S>(state: &mut EState<S>) -> Result<Vec<LogoValue>, String> {
 }
 
 fn thing<S>(state: &mut EState<S>, name: String) -> Result<LogoValue, String> {
+    let name = name.to_lowercase();
     if !state.vars.contains_key(name.as_str()) {
         return Err("No such variable".to_string());
     }

@@ -30,7 +30,14 @@ pub fn execute_expr<'a, S>(state: &mut EState<S>, it: &mut impl Iterator<Item = 
             return Ok(Some(LogoValue::Word(Word(word.clone()))))
         }
 
-        let fun = state.functions.get(word).clone();
+        let word = word.to_lowercase();
+        if let Some(var_name) = word.strip_prefix(":") {
+            if !state.vars.contains_key(var_name) {
+                return Err("No such variable".to_string());
+            }
+            return Ok(Some(state.vars[var_name].clone()));
+        }
+        let fun = state.functions.get(word.as_str());
         if let Some(fun) = fun {
             let f = fun.f.clone();
             let mut args = Vec::with_capacity(fun.args as usize);
@@ -65,4 +72,8 @@ fn test_execution() {
     let result = execute_str(&mut state, "add 5 repeat 4 [add 1] add 10");
     assert!(result.is_ok());
     assert_eq!(state.state.total, 19);
+    state.state.total = 0;
+    let result = execute_str(&mut state, "make 'hi' 5 add :hi add thing 'hi'");
+    assert!(result.is_ok());
+    assert_eq!(state.state.total, 10);
 }
