@@ -5,4 +5,5 @@ edition.workspace = true
 
 [dependencies]
 lazy_static = "1.4.0"
+getrandom = { version = "0.2", features = ["js"] }
 rand = "0.8.5"
