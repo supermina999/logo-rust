@@ -7,17 +7,20 @@
   <body>
     <canvas id="canvas" width="800" height="450" style="image-rendering: pixelated;"></canvas>
     <script type="module">
-      import init, { render } from "./pkg/logo_img_render.js";
+      import init, { context_create, context_render, context_get_state } from "./pkg/logo_img_render.js";
       init().then(() => {
         const canvas = document.getElementById("canvas");
 
+        let context = context_create(canvas.width, canvas.height);
         let renderData;
         try {
-          renderData = render("to square :x repeat 4 [fd :x rt 90] end", "square 30 square 40 square 50", canvas.width, canvas.height);
+          renderData = context_render(context, "to square :x repeat 3 [fd :x rt 90] end", "square 30 square 40 square 50");
         }
         catch(e) {
           alert(e);
         }
+        let state = context_get_state(context);
+        console.log(state.turtle_pos.x);
         
         const ctx = canvas.getContext("2d");
         const imageData = ctx.createImageData(canvas.width, canvas.height);

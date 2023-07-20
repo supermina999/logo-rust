@@ -5,3 +5,4 @@ edition.workspace = true
 
 [dependencies]
 logo-interp = {path = '../logo-interp'}
+wasm-bindgen = "0.2.74"

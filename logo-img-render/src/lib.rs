@@ -10,7 +10,7 @@ use logo_runtime::drawinglib::add_drawinglib;
 use logo_runtime::logo_interp::executor::execute_str;
 use logo_runtime::logo_interp::executor_state::EState;
 use logo_runtime::logo_interp::stdlib::add_stdlib;
-use logo_runtime::state::{Delegate, State};
+use logo_runtime::state::{Delegate, State, StateData};
 
 struct DrawingDelegate {
     dt: Rc<RefCell<DrawTarget>>
@@ -61,8 +61,11 @@ impl Delegate for DrawingDelegate {
     }
 }
 
+#[wasm_bindgen]
 pub struct Context {
+    #[wasm_bindgen(skip)]
     pub dt: Rc<RefCell<DrawTarget>>,
+    #[wasm_bindgen(skip)]
     pub state: EState<State>
 }
 
@@ -82,6 +85,29 @@ impl Context {
         let dt_mut = self.dt.borrow_mut();
         Ok(Vec::from(dt_mut.get_data_u8()))
     }
+}
+
+#[wasm_bindgen]
+pub fn context_create(width: i32, height: i32) -> Context {
+    let dt = Rc::new(RefCell::new(DrawTarget::new(width, height)));
+    let dd = DrawingDelegate{ dt: dt.clone() };
+    let mut state = EState::new(State::new(Box::new(dd)));
+    state.state.delegate.clear_graphics();
+    add_stdlib(&mut state);
+    add_drawinglib(&mut state);
+    Context {dt, state}
+}
+
+#[wasm_bindgen]
+pub fn context_render(context: &mut Context, proc_source: &str, cmd_source: &str) -> Result<Vec<u8>, String> {
+    execute_str(&mut context.state, proc_source, cmd_source)?;
+    let dt_mut = context.dt.borrow_mut();
+    Ok(Vec::from(dt_mut.get_data_u8()))
+}
+
+#[wasm_bindgen]
+pub fn context_get_state(context: &mut Context) -> StateData {
+    context.state.state.data
 }
 
 #[wasm_bindgen]
