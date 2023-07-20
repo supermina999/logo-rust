@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use crate::core::LogoValue;
+use crate::core::*;
 
 lazy_static! {
     static ref TERMINATOR_CHARS: HashSet<char>
@@ -26,7 +26,7 @@ pub fn parse(source: &str) -> Result<Vec<LogoValue>, String> {
     for ch in source.chars() {
         if (mode == Mode::Word || mode == Mode::DoubleQuoteString) && is_terminator_char(ch) {
             if mode == Mode::Word {
-                list_stack.last_mut().unwrap().push(LogoValue::Word(pending_word));
+                list_stack.last_mut().unwrap().push(LogoValue::Word(Word(pending_word)));
             }
             else {
                 list_stack.last_mut().unwrap().push(LogoValue::String(pending_word));
@@ -64,7 +64,7 @@ pub fn parse(source: &str) -> Result<Vec<LogoValue>, String> {
             mode = Mode::SingleQuoteString;
         }
         else if TERMINATOR_CHARS.contains(&ch) {
-            list_stack.last_mut().unwrap().push(LogoValue::Word(String::from(ch)));
+            list_stack.last_mut().unwrap().push(LogoValue::Word(Word(ch.to_string())));
         }
         else {
             mode = Mode::Word;
@@ -73,7 +73,7 @@ pub fn parse(source: &str) -> Result<Vec<LogoValue>, String> {
     }
     match mode {
         Mode::None => {},
-        Mode::Word => list_stack.last_mut().unwrap().push(LogoValue::Word(pending_word)),
+        Mode::Word => list_stack.last_mut().unwrap().push(LogoValue::Word(Word(pending_word))),
         Mode::DoubleQuoteString => list_stack.last_mut().unwrap().push(LogoValue::String(pending_word)),
         Mode::SingleQuoteString => {
             return Err(String::from("Missing closing quote"))
@@ -89,18 +89,18 @@ pub fn parse(source: &str) -> Result<Vec<LogoValue>, String> {
 fn test_loop_parsing() {
     let result = parse("repeat 12  [rt 30 repeat 4 [fd   50 rt 90]]");
     let expected = vec![
-        LogoValue::Word("repeat".to_string()),
-        LogoValue::Word("12".to_string()),
+        LogoValue::Word(Word("repeat".to_string())),
+        LogoValue::Word(Word("12".to_string())),
         LogoValue::List(vec![
-            LogoValue::Word("rt".to_string()),
-            LogoValue::Word("30".to_string()),
-            LogoValue::Word("repeat".to_string()),
-            LogoValue::Word("4".to_string()),
+            LogoValue::Word(Word("rt".to_string())),
+            LogoValue::Word(Word("30".to_string())),
+            LogoValue::Word(Word("repeat".to_string())),
+            LogoValue::Word(Word("4".to_string())),
             LogoValue::List(vec![
-                LogoValue::Word("fd".to_string()),
-                LogoValue::Word("50".to_string()),
-                LogoValue::Word("rt".to_string()),
-                LogoValue::Word("90".to_string()),
+                LogoValue::Word(Word("fd".to_string())),
+                LogoValue::Word(Word("50".to_string())),
+                LogoValue::Word(Word("rt".to_string())),
+                LogoValue::Word(Word("90".to_string())),
             ])
         ])
     ];
@@ -112,9 +112,9 @@ fn test_strings() {
     let result = parse("\"hello world 'long string' blah");
     let expected = vec![
         LogoValue::String("hello".to_string()),
-        LogoValue::Word("world".to_string()),
+        LogoValue::Word(Word("world".to_string())),
         LogoValue::String("long string".to_string()),
-        LogoValue::Word("blah".to_string()),
+        LogoValue::Word(Word("blah".to_string())),
     ];
     assert_eq!(result, Ok(expected))
 }
