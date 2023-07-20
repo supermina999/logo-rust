@@ -1,5 +1,7 @@
 use wasm_bindgen::prelude::*;
 
+pub use logo_runtime;
+
 use std::cell::RefCell;
 use std::rc::Rc;
 use raqote::*;
@@ -59,16 +61,31 @@ impl Delegate for DrawingDelegate {
     }
 }
 
+pub struct Context {
+    pub dt: Rc<RefCell<DrawTarget>>,
+    pub state: EState<State>
+}
+
+impl Context {
+    pub fn new(width: i32, height: i32) -> Self {
+        let dt = Rc::new(RefCell::new(DrawTarget::new(width, height)));
+        let dd = DrawingDelegate{ dt: dt.clone() };
+        let mut state = EState::new(State::new(Box::new(dd)));
+        state.state.delegate.clear_graphics();
+        add_stdlib(&mut state);
+        add_drawinglib(&mut state);
+        Self {dt, state}
+    }
+
+    pub fn render(&mut self, proc_source: &str, cmd_source: &str) -> Result<Vec<u8>, String> {
+        execute_str(&mut self.state, proc_source, cmd_source)?;
+        let dt_mut = self.dt.borrow_mut();
+        Ok(Vec::from(dt_mut.get_data_u8()))
+    }
+}
+
 #[wasm_bindgen]
 pub fn render(proc_source: &str, cmd_source: &str, width: i32, height: i32) -> Result<Vec<u8>, String> {
-    let dt = Rc::new(RefCell::new(DrawTarget::new(width, height)));
-    let dd = DrawingDelegate{ dt: dt.clone() };
-    let mut state = EState::new(State::new(Box::new(dd)));
-    state.state.delegate.clear_graphics();
-    add_stdlib(&mut state);
-    add_drawinglib(&mut state);
-    execute_str(&mut state, proc_source, cmd_source)?;
-
-    let dt_mut = dt.borrow_mut();
-    Ok(Vec::from(dt_mut.get_data_u8()))
+    let mut context = Context::new(width, height);
+    context.render(proc_source, cmd_source)
 }
