@@ -85,6 +85,24 @@ impl LogoConvertible for i32 {
     }
 }
 
+impl LogoConvertible for bool {
+    fn to_logo(&self) -> LogoValue {
+        return LogoValue::Word(Word(self.to_string()));
+    }
+
+    fn from_logo(value: LogoValue) -> Result<Self, String> {
+        match value {
+            LogoValue::Word(val) => {
+                match val.0.parse::<bool>() {
+                    Ok(val) => Ok(val),
+                    _ => Err("Type mismatch".to_string())
+                }
+            },
+            _ => Err("Type mismatch".to_string())
+        }
+    }
+}
+
 impl<T: LogoConvertible> LogoConvertible for Vec<T> {
     fn to_logo(&self) -> LogoValue {
         let mut res = Vec::with_capacity(self.len());
