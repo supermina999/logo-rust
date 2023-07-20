@@ -1,5 +1,5 @@
 [workspace]
-members = ["logo-interp", "logo-runtime"]
+members = ["logo-interp", "logo-runtime", "logo-img-render"]
 
 [workspace.package]
 version = "0.1.0"

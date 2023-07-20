@@ -1,0 +1,8 @@
+[package]
+name = "logo-img-render"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+logo-runtime = {path = '../logo-runtime'}
+raqote = "0.8.2"

@@ -1,4 +1,6 @@
-mod common;
-mod state;
+pub use logo_interp;
+
+pub mod common;
+pub mod state;
 mod colors;
-mod drawinglib;
+pub mod drawinglib;
