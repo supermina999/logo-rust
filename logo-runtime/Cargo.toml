@@ -1,7 +1,7 @@
 [package]
-name = "logo-interp"
+name = "logo-runtime"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-lazy_static = "1.4.0"
+logo-interp = {path = '../logo-interp'}
