@@ -8,6 +8,12 @@ pub enum LogoValue {
     List(Vec<LogoValue>)
 }
 
+#[derive(Clone, PartialEq)]
+pub struct LogoProcedure {
+    pub arg_names: Vec<String>,
+    pub code: Vec<LogoValue>
+}
+
 pub trait LogoConvertible {
     fn to_logo(&self) -> LogoValue;
     fn from_logo(value: LogoValue) -> Result<Self, String> where Self: Sized;

@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use crate::core::*;
 
 lazy_static! {
@@ -83,6 +83,70 @@ pub fn parse(source: &str) -> Result<Vec<LogoValue>, String> {
         return Err(String::from("Missing closing bracket"));
     }
     return Ok(list_stack.pop().unwrap());
+}
+
+pub fn parse_procedures(source: &str) -> Result<HashMap<String, LogoProcedure>, String> {
+    let mut result = HashMap::new();
+    let mut name = String::new();
+    let mut arg_names = Vec::new();
+    let mut code = Vec::new();
+    let values = parse(source)?;
+    #[derive(PartialEq)]
+    enum Mode {
+        None,
+        Name,
+        Params,
+        Body
+    }
+    let mut mode = Mode::None;
+
+    for value in values {
+        if mode == Mode::None {
+            if let LogoValue::Word(word) = &value {
+                if word.0.to_lowercase() == "to" {
+                    mode = Mode::Name;
+                    continue;
+                }
+            }
+        }
+        if mode == Mode::Name {
+            if let LogoValue::Word(word) = &value {
+                name = word.0.to_lowercase();
+                mode = Mode::Params;
+                continue;
+            }
+        }
+        if mode == Mode::Params {
+            if let LogoValue::Word(word) = &value {
+                if let Some(arg_name) = word.0.strip_prefix(":") {
+                    arg_names.push(arg_name.to_lowercase());
+                    continue;
+                }
+            }
+            mode = Mode::Body;
+        }
+        if mode == Mode::Body {
+            if let LogoValue::Word(word) = &value {
+                if word.0.to_lowercase() == "end" {
+                    mode = Mode::None;
+                    result.insert(name, LogoProcedure {arg_names, code});
+                    name = String::new();
+                    arg_names = Vec::new();
+                    code = Vec::new();
+                    continue;
+                }
+            }
+            code.push(value);
+            continue;
+        }
+        return Err("Invalid procedure syntax".to_string());
+    }
+
+    if mode != Mode::None {
+        return Err("Invalid procedure syntax".to_string());
+    }
+
+    Ok(result)
 }
 
 #[test]

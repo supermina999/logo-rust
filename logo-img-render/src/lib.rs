@@ -60,14 +60,14 @@ impl Delegate for DrawingDelegate {
 }
 
 #[wasm_bindgen]
-pub fn render(logo_source: &str, width: i32, height: i32) -> Result<Vec<u8>, String> {
+pub fn render(proc_source: &str, cmd_source: &str, width: i32, height: i32) -> Result<Vec<u8>, String> {
     let dt = Rc::new(RefCell::new(DrawTarget::new(width, height)));
     let dd = DrawingDelegate{ dt: dt.clone() };
     let mut state = EState::new(State::new(Box::new(dd)));
     state.state.delegate.clear_graphics();
     add_stdlib(&mut state);
     add_drawinglib(&mut state);
-    execute_str(&mut state, logo_source)?;
+    execute_str(&mut state, proc_source, cmd_source)?;
 
     let dt_mut = dt.borrow_mut();
     Ok(Vec::from(dt_mut.get_data_u8()))

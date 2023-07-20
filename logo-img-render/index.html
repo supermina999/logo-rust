@@ -13,7 +13,7 @@
 
         let renderData;
         try {
-          renderData = render("repeat 4 [fd 100 rt 90] ", canvas.width, canvas.height);
+          renderData = render("to square :x repeat 4 [fd :x rt 90] end", "square 30 square 40 square 50", canvas.width, canvas.height);
         }
         catch(e) {
           alert(e);

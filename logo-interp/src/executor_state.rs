@@ -11,6 +11,7 @@ pub struct Function<S> {
 
 pub struct EState<S> {
     pub functions: HashMap<String, Function<S>>,
+    pub logo_procedures: HashMap<String, LogoProcedure>,
     pub vars: HashMap<String, LogoValue>,
     pub state: S
 }
@@ -86,7 +87,12 @@ impl<S: 'static> Function<S> {
 
 impl<S> EState<S> {
     pub fn new(state: S) -> Self {
-        return EState {functions: HashMap::new(), vars: HashMap::new(), state };
+        return EState {
+            functions: HashMap::new(),
+            logo_procedures: HashMap::new(),
+            vars: HashMap::new(),
+            state
+        };
     }
 }
 
