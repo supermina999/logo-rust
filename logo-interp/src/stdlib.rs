@@ -61,6 +61,8 @@ pub fn add_stdlib<S: 'static>(es: &mut EState<S>) {
     es.functions.insert("name?".to_string(), Function::from_fn1(name::<S>));
     es.functions.insert("names".to_string(), Function::from_fn(names::<S>));
     es.functions.insert("thing".to_string(), Function::from_fn1(thing::<S>));
+
+    es.functions.insert("output".to_string(), Function::from_proc1(output::<S>));
 }
 
 fn repeat<S>(state: &mut EState<S>, n: i32, cmd: Vec<LogoValue>) -> Result<(), String> {
@@ -339,4 +341,10 @@ fn thing<S>(state: &mut EState<S>, name: String) -> Result<LogoValue, String> {
         return Err("No such variable".to_string());
     }
     Ok(state.vars[name.as_str()].clone())
+}
+
+
+fn output<S>(state: &mut EState<S>, val: LogoValue) -> Result<(), String> {
+    state.output = Some(val);
+    Err("Output".to_string())
 }

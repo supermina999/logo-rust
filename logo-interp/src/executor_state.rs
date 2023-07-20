@@ -13,6 +13,7 @@ pub struct EState<S> {
     pub functions: HashMap<String, Function<S>>,
     pub logo_procedures: HashMap<String, LogoProcedure>,
     pub vars: HashMap<String, LogoValue>,
+    pub output: Option<LogoValue>,
     pub state: S
 }
 
@@ -91,6 +92,7 @@ impl<S> EState<S> {
             functions: HashMap::new(),
             logo_procedures: HashMap::new(),
             vars: HashMap::new(),
+            output: None,
             state
         };
     }

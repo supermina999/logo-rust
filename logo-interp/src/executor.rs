@@ -71,8 +71,16 @@ pub fn execute_expr<'a, S>(state: &mut EState<S>, it: &mut impl Iterator<Item = 
             }
             let proc_result = execute(state, &logo_proc.code);
             restore_vars(state, backup);
-            proc_result?;
-            return Ok(None);
+            match proc_result {
+                Err(err) => {
+                    if err == "Output" {
+                        let output = state.output.clone();
+                        state.output = None;
+                        return Ok(output);
+                    }
+                },
+                Ok(()) => return Ok(None)
+            }
         }
         return Err(format!("Don't know what to do with {:?}", cmd))
     }
@@ -129,8 +137,10 @@ fn test_execution() {
     assert_eq!(state.state.total, 10);
 
     state.state.total = 0;
-    let result = execute_str(&mut state, "to add4 add 4 end to add_double :x add :x add :x end",
-                             "add4 add_double 6");
+    let result = execute_str(&mut state, "to add4 add 4 end \
+        to add_double :x add :x add :x end \
+        to double :x output sum :x :x end",
+ "add4 add_double 6 add double 3");
     assert!(result.is_ok());
-    assert_eq!(state.state.total, 16);
+    assert_eq!(state.state.total, 22);
 }
