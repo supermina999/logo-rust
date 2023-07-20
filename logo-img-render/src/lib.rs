@@ -1,4 +1,5 @@
-use std::fs;
+use wasm_bindgen::prelude::*;
+
 use std::cell::RefCell;
 use std::rc::Rc;
 use raqote::*;
@@ -58,24 +59,16 @@ impl Delegate for DrawingDelegate {
     }
 }
 
-fn render(logo_source: &str, out_path: &str) {
-    let dt = Rc::new(RefCell::new(DrawTarget::new(800, 450)));
+#[wasm_bindgen]
+pub fn render(logo_source: &str, width: i32, height: i32) -> Result<Vec<u8>, String> {
+    let dt = Rc::new(RefCell::new(DrawTarget::new(width, height)));
     let dd = DrawingDelegate{ dt: dt.clone() };
     let mut state = EState::new(State::new(Box::new(dd)));
     state.state.delegate.clear_graphics();
     add_stdlib(&mut state);
     add_drawinglib(&mut state);
-    let result = execute_str(&mut state, logo_source);
-    if let Err(err) = result {
-        panic!("Error occurred while executing: {}", err);
-    }
+    execute_str(&mut state, logo_source)?;
 
-    dt.borrow_mut().write_png(out_path).expect("Failed to write file");
-}
-
-fn main() {
-    let logo_path = std::env::args().nth(1).expect("Please provide path to a file with Logo code");
-    let out_path = std::env::args().nth(2).expect("Please provide output path");
-    let logo_source = fs::read_to_string(logo_path).expect("Failed to open file");
-    render(logo_source.as_str(), out_path.as_str());
+    let dt_mut = dt.borrow_mut();
+    Ok(Vec::from(dt_mut.get_data_u8()))
 }

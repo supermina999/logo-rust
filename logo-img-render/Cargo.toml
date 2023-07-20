@@ -3,6 +3,10 @@ name = "logo-img-render"
 version.workspace = true
 edition.workspace = true
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
 logo-runtime = {path = '../logo-runtime'}
-raqote = "0.8.2"
+raqote = { version = "0.8.2", default-features = false, features = ["png"] }
+wasm-bindgen = "0.2.74"
