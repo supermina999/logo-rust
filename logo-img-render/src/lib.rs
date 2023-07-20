@@ -56,7 +56,7 @@ impl Delegate for DrawingDelegate {
         );
     }
 
-    fn fill(&mut self, pos: Pos, color: (u8, u8, u8)) {
+    fn fill(&mut self, _pos: Pos, _color: (u8, u8, u8)) {
         todo!()
     }
 }

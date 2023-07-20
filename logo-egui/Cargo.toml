@@ -10,3 +10,6 @@ logo-img-render = {path = '../logo-img-render'}
 egui = "0.22.0"
 egui_extras = "0.22.0"
 eframe = "0.22.0"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen-futures = "0.4"
