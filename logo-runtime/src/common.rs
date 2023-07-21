@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 #[wasm_bindgen]
 pub struct Pos {
     pub x: f64,

@@ -71,19 +71,11 @@ pub struct Context {
 
 impl Context {
     pub fn new(width: i32, height: i32) -> Self {
-        let dt = Rc::new(RefCell::new(DrawTarget::new(width, height)));
-        let dd = DrawingDelegate{ dt: dt.clone() };
-        let mut state = EState::new(State::new(Box::new(dd)));
-        state.state.delegate.clear_graphics();
-        add_stdlib(&mut state);
-        add_drawinglib(&mut state);
-        Self {dt, state}
+        context_create(width, height)
     }
 
     pub fn render(&mut self, proc_source: &str, cmd_source: &str) -> Result<Vec<u8>, String> {
-        execute_str(&mut self.state, proc_source, cmd_source)?;
-        let dt_mut = self.dt.borrow_mut();
-        Ok(Vec::from(dt_mut.get_data_u8()))
+        context_render(self, proc_source, cmd_source)
     }
 }
 
@@ -91,7 +83,7 @@ impl Context {
 pub fn context_create(width: i32, height: i32) -> Context {
     let dt = Rc::new(RefCell::new(DrawTarget::new(width, height)));
     let dd = DrawingDelegate{ dt: dt.clone() };
-    let mut state = EState::new(State::new(Box::new(dd)));
+    let mut state = EState::new(State::new(width, height, Box::new(dd)));
     state.state.delegate.clear_graphics();
     add_stdlib(&mut state);
     add_drawinglib(&mut state);

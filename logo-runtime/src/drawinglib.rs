@@ -91,7 +91,7 @@ fn fd(state: &mut EState<State>, val: f64) -> Result<(), String> {
     let delta_x = angle.to_radians().sin() * val;
     let delta_y = angle.to_radians().cos() * val;
     let new_pos = Pos{x: old_pos.x + delta_x, y: old_pos.y + delta_y};
-    move_turtle(state, new_pos);
+    move_turtle(&mut state.state, new_pos);
     Ok(())
 }
 
@@ -117,7 +117,7 @@ fn setpos(state: &mut EState<State>, pos: Vec<f64>) -> Result<(), String> {
         Err("Setpos takes exactly 2 coordinates".to_string())
     }
     else {
-        move_turtle(state, Pos{ x: pos[0], y: pos[1] });
+        move_turtle(&mut state.state, Pos{ x: pos[0], y: pos[1] });
         Ok(())
     }
 }
@@ -131,30 +131,20 @@ fn ycoor(state: &mut EState<State>) -> Result<f64, String> {
 }
 
 fn setx(state: &mut EState<State>, x: f64) -> Result<(), String> {
-    move_turtle(state, Pos{x, y: state.state.data.turtle_pos.y});
+    let y = state.state.data.turtle_pos.y;
+    move_turtle(&mut state.state, Pos{x, y});
     Ok(())
 }
 
 fn sety(state: &mut EState<State>, y: f64) -> Result<(), String> {
-    move_turtle(state, Pos{x: state.state.data.turtle_pos.y, y});
+    let x = state.state.data.turtle_pos.x;
+    move_turtle(&mut state.state, Pos{x, y});
     Ok(())
 }
 
 fn home(state: &mut EState<State>) -> Result<(), String> {
-    move_turtle(state, Pos{ x: 0f64, y: 0f64 });
+    move_turtle(&mut state.state, Pos{ x: 0f64, y: 0f64 });
     Ok(())
-}
-
-fn move_turtle(state: &mut EState<State>, pos: Pos) {
-    let state = &mut state.state;
-    let old_pos = state.data.turtle_pos;
-    state.data.turtle_pos = pos;
-    let color = get_color(state.data.color_idx);
-    match state.data.pen_state {
-        PenState::Down => state.delegate.draw_line(old_pos, pos, state.data.pen_size, color),
-        PenState::Erase => state.delegate.draw_line(old_pos, pos, state.data.pen_size, (255u8, 255u8, 255u8)),
-        _ => {}
-    }
 }
 
 fn setpensize(state: &mut EState<State>, pen_size: f64) -> Result<(), String> {
@@ -186,4 +176,99 @@ fn setc(state: &mut EState<State>, color: i32) -> Result<(), String> {
 
 fn color(state: &mut EState<State>) -> Result<i32, String> {
     Ok(state.state.data.color_idx)
+}
+
+fn move_turtle(state: &mut State, pos: Pos) {
+    let old_pos = state.data.turtle_pos;
+    let w2 = state.data.canvas_width as f64 / 2f64;
+    let h2 = state.data.canvas_height as f64 / 2f64;
+    if pos.y > old_pos.y + f64::EPSILON {
+        let xp = intersect_horizontal(old_pos, pos, h2, -w2, w2);
+        if xp.is_some() {
+            draw_line(state, old_pos, Pos{x: xp.unwrap(), y: h2});
+            state.data.turtle_pos = Pos{x: xp.unwrap(), y: -h2};
+            move_turtle(state, Pos{x: pos.x, y: pos.y - state.data.canvas_height as f64});
+            return;
+        }
+    }
+    if pos.y + f64::EPSILON < old_pos.y {
+        let xp = intersect_horizontal(old_pos, pos, -h2, -w2, w2);
+        if xp.is_some() {
+            draw_line(state, old_pos, Pos{x: xp.unwrap(), y: -h2});
+            state.data.turtle_pos = Pos{x: xp.unwrap(), y: h2};
+            move_turtle(state, Pos{x: pos.x, y: pos.y + state.data.canvas_height as f64});
+            return;
+        }
+    }
+    if pos.x > old_pos.x + f64::EPSILON {
+        let yp = intersect_vertical(old_pos, pos, w2, -h2, h2);
+        if yp.is_some() {
+            draw_line(state, old_pos, Pos{x: w2, y: yp.unwrap()});
+            state.data.turtle_pos = Pos{x: -w2, y: yp.unwrap()};
+            move_turtle(state, Pos{x: pos.x - state.data.canvas_width as f64, y: pos.y});
+            return;
+        }
+    }
+    if pos.x + f64::EPSILON < old_pos.x {
+        let yp = intersect_vertical(old_pos, pos, -w2, -h2, h2);
+        if yp.is_some() {
+            draw_line(state, old_pos, Pos{x: -w2, y: yp.unwrap()});
+            state.data.turtle_pos = Pos{x: w2, y: yp.unwrap()};
+            move_turtle(state, Pos{x: pos.x + state.data.canvas_width as f64, y: pos.y});
+            return;
+        }
+    }
+    state.data.turtle_pos = pos;
+    draw_line(state, old_pos, pos);
+}
+
+fn draw_line(state: &mut State, p1: Pos, p2: Pos) {
+    let mut color = get_color(state.data.color_idx);
+    if state.data.pen_state == PenState::Erase {
+        color = (255u8, 255u8, 255u8);
+    }
+    if state.data.pen_state != PenState::Up {
+        state.delegate.draw_line(p1, p2, state.data.pen_size, color);
+    }
+}
+
+fn intersect_horizontal(p1: Pos, p2: Pos, y: f64, x1: f64, x2: f64) -> Option<f64> {
+    if p1.y.min(p2.y) > y || p1.y.max(p2.y) < y {
+        return None;
+    }
+    let xp = p1.x - (p1.y - y) / (p1.y - p2.y) * (p1.x - p2.x);
+    if xp >= x1 && xp <= x2 {
+        Some(xp)
+    }
+    else {
+        None
+    }
+}
+
+fn intersect_vertical(p1: Pos, p2: Pos, x: f64, y1: f64, y2: f64) -> Option<f64> {
+    if p1.x.min(p2.x) > x || p1.x.max(p2.x) < x {
+        return None;
+    }
+    let yp = p1.y - (p1.x - x) / (p1.x - p2.x) * (p1.y - p2.y);
+    if yp >= y1 && yp <= y2 {
+        Some(yp)
+    }
+    else {
+        None
+    }
+}
+
+#[test]
+fn test_move_turtle() {
+    use crate::state::NoOpDelegate;
+    use approx::assert_relative_eq;
+
+    let mut state = EState::new(State::new(800, 450, Box::new(NoOpDelegate{})));
+    fd(&mut state, 50.0).unwrap();
+    assert_relative_eq!(state.state.data.turtle_pos.y, 50.0, epsilon = 0.00001);
+    fd(&mut state, 400.0).unwrap();
+    assert_relative_eq!(state.state.data.turtle_pos.y, 0.0, epsilon = 0.00001);
+    rt(&mut state, 90.0).unwrap();
+    fd(&mut state, 500.0).unwrap();
+    assert_relative_eq!(state.state.data.turtle_pos.x, -300.0, epsilon = 0.00001);
 }
