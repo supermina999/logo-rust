@@ -1,3 +1,5 @@
+mod fill;
+
 use wasm_bindgen::prelude::*;
 
 pub use logo_runtime;
@@ -11,6 +13,7 @@ use logo_runtime::logo_interp::executor::execute_str;
 use logo_runtime::logo_interp::executor_state::EState;
 use logo_runtime::logo_interp::stdlib::add_stdlib;
 use logo_runtime::state::{Delegate, State, StateData};
+use crate::fill::flood_fill;
 
 struct DrawingDelegate {
     dt: Rc<RefCell<DrawTarget>>
@@ -56,8 +59,11 @@ impl Delegate for DrawingDelegate {
         );
     }
 
-    fn fill(&mut self, _pos: Pos, _color: (u8, u8, u8)) {
-        todo!()
+    fn fill(&mut self, pos: Pos, color: (u8, u8, u8)) {
+        let upd_pos = self.transform_coords(pos);
+        let mut dt_mut = self.dt.borrow_mut();
+        flood_fill(dt_mut.width(), dt_mut.height(), dt_mut.get_data_u8_mut(),
+            upd_pos.0 as i32, upd_pos.1 as i32, color);
     }
 }
 
