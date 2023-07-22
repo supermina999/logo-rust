@@ -1,18 +1,19 @@
 use wasm_bindgen::prelude::*;
+use crate::colors::LogoColor;
 use crate::common::*;
 
 pub trait Delegate {
     fn clear_graphics(&mut self);
-    fn draw_line(&mut self, from: Pos, to: Pos, pen_size: f64, color: (u8, u8, u8));
-    fn fill(&mut self, pos: Pos, color: (u8, u8, u8));
+    fn draw_line(&mut self, from: Pos, to: Pos, pen_size: f64, color: LogoColor);
+    fn fill(&mut self, pos: Pos, color: LogoColor);
 }
 
 pub struct NoOpDelegate {}
 
 impl Delegate for NoOpDelegate {
     fn clear_graphics(&mut self) {}
-    fn draw_line(&mut self, _from: Pos, _to: Pos, _pen_size: f64, _color: (u8, u8, u8)) {}
-    fn fill(&mut self, _pos: Pos, _color: (u8, u8, u8)) {}
+    fn draw_line(&mut self, _from: Pos, _to: Pos, _pen_size: f64, _color: LogoColor) {}
+    fn fill(&mut self, _pos: Pos, _color: LogoColor) {}
 }
 
 #[wasm_bindgen]

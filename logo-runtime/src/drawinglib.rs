@@ -1,5 +1,5 @@
 use logo_interp::executor_state::*;
-use crate::colors::{colors_count, get_color};
+use crate::colors::{LogoColor, colors_count, get_color};
 use crate::common::Pos;
 use crate::state::{PenState, State};
 
@@ -225,7 +225,7 @@ fn move_turtle(state: &mut State, pos: Pos) {
 fn draw_line(state: &mut State, p1: Pos, p2: Pos) {
     let mut color = get_color(state.data.color_idx);
     if state.data.pen_state == PenState::Erase {
-        color = (255u8, 255u8, 255u8);
+        color = LogoColor{r: 255, g: 255, b: 255};
     }
     if state.data.pen_state != PenState::Up {
         state.delegate.draw_line(p1, p2, state.data.pen_size, color);

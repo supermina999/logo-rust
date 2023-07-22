@@ -7,6 +7,7 @@ pub use logo_runtime;
 use std::cell::RefCell;
 use std::rc::Rc;
 use raqote::*;
+use logo_runtime::colors::LogoColor;
 use logo_runtime::common::Pos;
 use logo_runtime::drawinglib::add_drawinglib;
 use logo_runtime::logo_interp::executor::execute_str;
@@ -37,7 +38,7 @@ impl Delegate for DrawingDelegate {
         });
     }
 
-    fn draw_line(&mut self, from: Pos, to: Pos, pen_size: f64, color: (u8, u8, u8)) {
+    fn draw_line(&mut self, from: Pos, to: Pos, pen_size: f64, color: LogoColor) {
         let upd_from = self.transform_coords(from);
         let upd_to = self.transform_coords(to);
         let mut pb = PathBuilder::new();
@@ -45,9 +46,9 @@ impl Delegate for DrawingDelegate {
         pb.line_to(upd_to.0, upd_to.1);
         let path = pb.finish();
         self.dt.borrow_mut().stroke(&path, &Source::Solid(SolidSource {
-                r: color.0,
-                g: color.1,
-                b: color.2,
+                r: color.r,
+                g: color.g,
+                b: color.b,
                 a: 255
             }),
             &StrokeStyle {
@@ -59,7 +60,7 @@ impl Delegate for DrawingDelegate {
         );
     }
 
-    fn fill(&mut self, pos: Pos, color: (u8, u8, u8)) {
+    fn fill(&mut self, pos: Pos, color: LogoColor) {
         let upd_pos = self.transform_coords(pos);
         let mut dt_mut = self.dt.borrow_mut();
         flood_fill(dt_mut.width(), dt_mut.height(), dt_mut.get_data_u8_mut(),

@@ -1,3 +1,13 @@
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+#[derive(Copy, Clone, PartialEq)]
+pub struct LogoColor {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8
+}
+
 static COLORS: &'static [(u8, u8, u8)] = &[
     (255, 255, 255),
     (235, 235, 235),
@@ -145,6 +155,7 @@ pub fn colors_count() -> i32 {
     COLORS.len() as i32
 }
 
-pub fn get_color(idx: i32) -> (u8, u8, u8) {
-    COLORS[idx as usize]
+pub fn get_color(idx: i32) -> LogoColor {
+    let res = COLORS[idx as usize];
+    LogoColor{r: res.0, g: res.1, b: res.2}
 }
