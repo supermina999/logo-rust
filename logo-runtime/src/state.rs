@@ -6,6 +6,7 @@ pub trait Delegate {
     fn clear_graphics(&mut self);
     fn draw_line(&mut self, from: Pos, to: Pos, pen_size: f64, color: LogoColor);
     fn fill(&mut self, pos: Pos, color: LogoColor);
+    fn show(&mut self, message: &str);
 }
 
 pub struct NoOpDelegate {}
@@ -14,6 +15,7 @@ impl Delegate for NoOpDelegate {
     fn clear_graphics(&mut self) {}
     fn draw_line(&mut self, _from: Pos, _to: Pos, _pen_size: f64, _color: LogoColor) {}
     fn fill(&mut self, _pos: Pos, _color: LogoColor) {}
+    fn show(&mut self, _message: &str) {}
 }
 
 #[wasm_bindgen]

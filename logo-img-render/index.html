@@ -58,14 +58,20 @@
       </tbody>
     </table>
     <script type="module">
-      import init, { context_create, context_render, context_get_state } from "./pkg/logo_img_render.js";
+      import init, { context_create, context_render, context_get_state, context_set_show_fn } from "./pkg/logo_img_render.js";
       init().then(() => {
         const canvas = document.getElementById("canvas");
         const logs = document.getElementById("logs");
         const cmdInput = document.getElementById("cmd_input");
         const turtle = document.getElementById("turtle");
 
+        let appendLog = function(msg) {
+          logs.innerHTML += msg + "<br/>";
+          logs.scrollTop = logs.scrollHeight;
+        }
+
         let context = context_create(canvas.width, canvas.height);
+        context_set_show_fn(context, appendLog);
 
         let render = function(cmd) {
           let procInput = document.getElementById("proc_input").value;
@@ -74,7 +80,7 @@
             renderData = context_render(context, procInput, cmd);
           }
           catch(e) {
-            logs.innerHTML += e + "<br/>";
+            appendLog(e);
             return;
           }
           const ctx = canvas.getContext("2d");
@@ -103,10 +109,9 @@
 
         cmdInput.addEventListener("keyup", ({key}) => {
           if (key === "Enter") {
-            logs.innerHTML += cmdInput.value + "<br/>";
+            appendLog(cmdInput.value);
             render(cmdInput.value);
             cmdInput.value = "";
-            logs.scrollTop = logs.scrollHeight;
           }
         })
       });

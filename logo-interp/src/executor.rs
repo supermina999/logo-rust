@@ -11,7 +11,7 @@ pub fn execute<S>(state: &mut EState<S>, source: &Vec<LogoValue>) -> Result<(), 
     let mut it = source.iter();
     while it.len() > 0 {
         match execute_expr(state, &mut it)? {
-            Some(val) => return Err(format!("Don't know what to do with {:?}", val)),
+            Some(val) => return Err(format!("Don't know what to do with {}", val)),
             None => {}
         }
     }
@@ -83,7 +83,7 @@ pub fn execute_expr<'a, S>(state: &mut EState<S>, it: &mut impl Iterator<Item = 
                 Ok(()) => return Ok(None)
             }
         }
-        return Err(format!("Don't know what to do with {:?}", cmd))
+        return Err(format!("Don't know what to do with {}", cmd))
     }
 
     return Ok(Some(cmd.clone()));

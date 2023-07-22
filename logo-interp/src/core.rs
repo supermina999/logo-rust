@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Word(pub String);
 
@@ -6,6 +8,22 @@ pub enum LogoValue {
     Word(Word),
     String(String),
     List(Vec<LogoValue>)
+}
+
+impl Display for LogoValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LogoValue::Word(word) => write!(f, "{}", word.0),
+            LogoValue::String(str) => write!(f, "{}", str),
+            LogoValue::List(list) => {
+                write!(f, "[")?;
+                let str_vec: Vec<String> = list.iter().map(|x| format!("{}", x)).collect();
+                write!(f, "{}", str_vec.join(" "))?;
+                write!(f, "]")?;
+                Ok(())
+            }
+        }
+    }
 }
 
 #[derive(Clone, PartialEq)]

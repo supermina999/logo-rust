@@ -1,9 +1,12 @@
+use logo_interp::core::LogoValue;
 use logo_interp::executor_state::*;
 use crate::colors::{LogoColor, colors_count, get_color};
 use crate::common::Pos;
 use crate::state::{PenState, State};
 
 pub fn add_drawinglib(es: &mut EState<State>) {
+    es.functions.insert("show".to_string(), Function::from_proc1(show));
+
     es.functions.insert("cg".to_string(), Function::from_proc(cg));
     es.functions.insert("clean".to_string(), Function::from_proc(clean));
     es.functions.insert("fill".to_string(), Function::from_proc(fill));
@@ -39,6 +42,11 @@ pub fn add_drawinglib(es: &mut EState<State>) {
     es.functions.insert("setc".to_string(), Function::from_proc1(setc));
     es.functions.insert("setcolor".to_string(), Function::from_proc1(setc));
     es.functions.insert("color".to_string(), Function::from_fn(color));
+}
+
+fn show(state: &mut EState<State>, val: LogoValue) -> Result<(), String> {
+    state.state.delegate.show(format!("{}", val).as_str());
+    Ok(())
 }
 
 fn cg(state: &mut EState<State>) -> Result<(), String> {

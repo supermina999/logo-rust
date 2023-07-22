@@ -73,7 +73,7 @@ fn repeat<S>(state: &mut EState<S>, n: i32, cmd: Vec<LogoValue>) -> Result<(), S
 }
 
 fn show<S>(_: &mut EState<S>, val: LogoValue) -> Result<(), String> {
-    println!("{:?}", val);
+    println!("{}", val);
     Ok(())
 }
 

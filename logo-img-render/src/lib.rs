@@ -17,7 +17,9 @@ use logo_runtime::state::{Delegate, State, StateData};
 use crate::fill::flood_fill;
 
 struct DrawingDelegate {
-    dt: Rc<RefCell<DrawTarget>>
+    dt: Rc<RefCell<DrawTarget>>,
+    #[cfg(target_arch = "wasm32")]
+    show_fn: Rc<RefCell<Option<js_sys::Function>>>
 }
 
 impl DrawingDelegate {
@@ -66,6 +68,13 @@ impl Delegate for DrawingDelegate {
         flood_fill(dt_mut.width(), dt_mut.height(), dt_mut.get_data_u8_mut(),
             upd_pos.0 as i32, upd_pos.1 as i32, color);
     }
+
+    fn show(&mut self, _message: &str) {
+        #[cfg(target_arch = "wasm32")] {
+            let this = JsValue::null();
+            let _ = self.show_fn.borrow().as_ref().unwrap().call1(&this, &JsValue::from(_message));
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -73,7 +82,10 @@ pub struct Context {
     #[wasm_bindgen(skip)]
     pub dt: Rc<RefCell<DrawTarget>>,
     #[wasm_bindgen(skip)]
-    pub state: EState<State>
+    pub state: EState<State>,
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen(skip)]
+    pub show_fn: Rc<RefCell<Option<js_sys::Function>>>
 }
 
 impl Context {
@@ -89,12 +101,20 @@ impl Context {
 #[wasm_bindgen]
 pub fn context_create(width: i32, height: i32) -> Context {
     let dt = Rc::new(RefCell::new(DrawTarget::new(width, height)));
-    let dd = DrawingDelegate{ dt: dt.clone() };
+    #[cfg(target_arch = "wasm32")]
+    let show_fn = Rc::new(RefCell::new(None));
+    #[cfg(target_arch = "wasm32")]
+    let dd = DrawingDelegate { dt: dt.clone(), show_fn: show_fn.clone() };
+    #[cfg(not(target_arch = "wasm32"))]
+    let dd = DrawingDelegate { dt: dt.clone() };
     let mut state = EState::new(State::new(width, height, Box::new(dd)));
     state.state.delegate.clear_graphics();
     add_stdlib(&mut state);
     add_drawinglib(&mut state);
-    Context {dt, state}
+    #[cfg(target_arch = "wasm32")]
+    return Context {dt, state, show_fn};
+    #[cfg(not(target_arch = "wasm32"))]
+    return Context {dt, state}
 }
 
 #[wasm_bindgen]
@@ -113,4 +133,10 @@ pub fn context_get_state(context: &mut Context) -> StateData {
 pub fn render(proc_source: &str, cmd_source: &str, width: i32, height: i32) -> Result<Vec<u8>, String> {
     let mut context = Context::new(width, height);
     context.render(proc_source, cmd_source)
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn context_set_show_fn(context: &mut Context, f: &js_sys::Function) {
+    *context.show_fn.borrow_mut() = Some(f.clone());
 }
