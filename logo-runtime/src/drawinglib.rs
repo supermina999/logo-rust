@@ -144,6 +144,7 @@ fn sety(state: &mut EState<State>, y: f64) -> Result<(), String> {
 
 fn home(state: &mut EState<State>) -> Result<(), String> {
     move_turtle(&mut state.state, Pos{ x: 0f64, y: 0f64 });
+    state.state.data.turtle_angle = 0.0;
     Ok(())
 }
 
@@ -168,7 +169,7 @@ fn st(state: &mut EState<State>) -> Result<(), String> {
 
 fn setc(state: &mut EState<State>, color: i32) -> Result<(), String> {
     if color < 0 || color >= colors_count() {
-        return Err("Invalid color number".to_string());
+        return Err(format!("Invalid color number {}", color));
     }
     state.state.data.color_idx = color;
     Ok(())

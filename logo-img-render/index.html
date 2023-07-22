@@ -79,11 +79,8 @@
           }
           const ctx = canvas.getContext("2d");
           const imageData = ctx.createImageData(canvas.width, canvas.height);
-          for (let i = 0; i < imageData.data.length; i += 4) {
-            imageData.data[i] = renderData[i+2];
-            imageData.data[i+1] = renderData[i+1];
-            imageData.data[i+2] = renderData[i];
-            imageData.data[i+3] = renderData[i+3];
+          for (let i = 0; i < imageData.data.length; i += 1) {
+            imageData.data[i] = renderData[i];
           }
           ctx.putImageData(imageData, 0, 0);
 

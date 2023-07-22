@@ -78,6 +78,7 @@ pub fn execute_expr<'a, S>(state: &mut EState<S>, it: &mut impl Iterator<Item = 
                         state.output = None;
                         return Ok(output);
                     }
+                    return Err(err);
                 },
                 Ok(()) => return Ok(None)
             }
