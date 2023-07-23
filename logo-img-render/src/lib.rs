@@ -4,8 +4,6 @@ use wasm_bindgen::prelude::*;
 
 pub use logo_runtime;
 
-use std::cell::RefCell;
-use std::rc::Rc;
 use raqote::*;
 use logo_runtime::colors::LogoColor;
 use logo_runtime::common::Pos;
@@ -16,23 +14,22 @@ use logo_runtime::logo_interp::stdlib::add_stdlib;
 use logo_runtime::state::{Delegate, State, StateData};
 use crate::fill::flood_fill;
 
-struct DrawingDelegate {
-    dt: Rc<RefCell<DrawTarget>>,
-    #[cfg(target_arch = "wasm32")]
-    show_fn: Rc<RefCell<Option<js_sys::Function>>>
+pub struct DrawingDelegate {
+    pub dt: DrawTarget,
+    pub show_fn: Option<Box<dyn Fn(&str)>>,
 }
 
 impl DrawingDelegate {
     fn transform_coords(&self, pos: Pos) -> (f32, f32) {
-        let width = self.dt.borrow().width() as f64;
-        let height = self.dt.borrow().height() as f64;
+        let width = self.dt.width() as f64;
+        let height = self.dt.height() as f64;
         ((pos.x + width / 2f64 + 0.5) as f32, (-pos.y + height / 2f64 + 0.5) as f32)
     }
 }
 
 impl Delegate for DrawingDelegate {
     fn clear_graphics(&mut self) {
-        self.dt.borrow_mut().clear(SolidSource{
+        self.dt.clear(SolidSource{
             r: 255,
             g: 255,
             b: 255,
@@ -47,7 +44,7 @@ impl Delegate for DrawingDelegate {
         pb.move_to(upd_from.0, upd_from.1);
         pb.line_to(upd_to.0, upd_to.1);
         let path = pb.finish();
-        self.dt.borrow_mut().stroke(&path, &Source::Solid(SolidSource {
+        self.dt.stroke(&path, &Source::Solid(SolidSource {
                 r: color.r,
                 g: color.g,
                 b: color.b,
@@ -64,17 +61,13 @@ impl Delegate for DrawingDelegate {
 
     fn fill(&mut self, pos: Pos, color: LogoColor) {
         let upd_pos = self.transform_coords(pos);
-        let mut dt_mut = self.dt.borrow_mut();
-        flood_fill(dt_mut.width(), dt_mut.height(), dt_mut.get_data_u8_mut(),
+        flood_fill(self.dt.width(), self.dt.height(), self.dt.get_data_u8_mut(),
             upd_pos.0 as i32, upd_pos.1 as i32, color);
     }
 
-    fn show(&mut self, _message: &str) {
-        #[cfg(target_arch = "wasm32")] {
-            if let Some(show_fn) = self.show_fn.borrow().as_ref() {
-                let this = JsValue::null();
-                let _ = show_fn.call1(&this, &JsValue::from(_message));
-            }
+    fn show(&mut self, message: &str) {
+        if let Some(show_fn) = &self.show_fn {
+            (show_fn)(message);
         }
     }
 }
@@ -82,12 +75,7 @@ impl Delegate for DrawingDelegate {
 #[wasm_bindgen]
 pub struct Context {
     #[wasm_bindgen(skip)]
-    pub dt: Rc<RefCell<DrawTarget>>,
-    #[wasm_bindgen(skip)]
-    pub state: EState<State>,
-    #[cfg(target_arch = "wasm32")]
-    #[wasm_bindgen(skip)]
-    pub show_fn: Rc<RefCell<Option<js_sys::Function>>>
+    pub state: EState<State<DrawingDelegate>>,
 }
 
 impl Context {
@@ -102,28 +90,19 @@ impl Context {
 
 #[wasm_bindgen]
 pub fn context_create(width: i32, height: i32) -> Context {
-    let dt = Rc::new(RefCell::new(DrawTarget::new(width, height)));
-    #[cfg(target_arch = "wasm32")]
-    let show_fn = Rc::new(RefCell::new(None));
-    #[cfg(target_arch = "wasm32")]
-    let dd = DrawingDelegate { dt: dt.clone(), show_fn: show_fn.clone() };
-    #[cfg(not(target_arch = "wasm32"))]
-    let dd = DrawingDelegate { dt: dt.clone() };
-    let mut state = EState::new(State::new(width, height, Box::new(dd)));
+    let dt = DrawTarget::new(width, height);
+    let dd = DrawingDelegate { dt, show_fn: None };
+    let mut state = EState::new(State::new(width, height, dd));
     state.state.delegate.clear_graphics();
     add_stdlib(&mut state);
     add_drawinglib(&mut state);
-    #[cfg(target_arch = "wasm32")]
-    return Context {dt, state, show_fn};
-    #[cfg(not(target_arch = "wasm32"))]
-    return Context {dt, state}
+    return Context {state}
 }
 
 #[wasm_bindgen]
 pub fn context_render(context: &mut Context, proc_source: &str, cmd_source: &str) -> Result<Vec<u8>, String> {
     execute_str(&mut context.state, proc_source, cmd_source)?;
-    let dt_mut = context.dt.borrow_mut();
-    Ok(Vec::from(dt_mut.get_data_u8()))
+    Ok(Vec::from(context.state.state.delegate.dt.get_data_u8()))
 }
 
 #[wasm_bindgen]
@@ -139,6 +118,9 @@ pub fn render(proc_source: &str, cmd_source: &str, width: i32, height: i32) -> R
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn context_set_show_fn(context: &mut Context, f: &js_sys::Function) {
-    *context.show_fn.borrow_mut() = Some(f.clone());
+pub fn context_set_show_fn(context: &mut Context, f: js_sys::Function) {
+    context.state.state.delegate.show_fn = Some(Box::new(move |msg: &str| {
+        let this = JsValue::null();
+        let _ = f.call1(&this, &JsValue::from(msg));
+    }));
 }

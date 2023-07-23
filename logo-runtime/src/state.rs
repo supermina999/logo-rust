@@ -39,13 +39,13 @@ pub struct StateData {
     pub color_idx: i32,
 }
 
-pub struct State {
+pub struct State<D: Delegate> {
     pub data: StateData,
-    pub delegate: Box<dyn Delegate>,
+    pub delegate: D,
 }
 
-impl State {
-    pub fn new(canvas_width: i32, canvas_height: i32, delegate: Box<dyn Delegate>) -> Self {
+impl<D: Delegate> State<D> {
+    pub fn new(canvas_width: i32, canvas_height: i32, delegate: D) -> Self {
         State {
             data: StateData {
                 canvas_width,

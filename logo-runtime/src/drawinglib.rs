@@ -2,9 +2,9 @@ use logo_interp::core::LogoValue;
 use logo_interp::executor_state::*;
 use crate::colors::{LogoColor, colors_count, get_color};
 use crate::common::Pos;
-use crate::state::{PenState, State};
+use crate::state::{Delegate, PenState, State};
 
-pub fn add_drawinglib(es: &mut EState<State>) {
+pub fn add_drawinglib<D: Delegate + 'static>(es: &mut EState<State<D>>) {
     es.functions.insert("show".to_string(), Function::from_proc1(show));
 
     es.functions.insert("cg".to_string(), Function::from_proc(cg));
@@ -44,12 +44,12 @@ pub fn add_drawinglib(es: &mut EState<State>) {
     es.functions.insert("color".to_string(), Function::from_fn(color));
 }
 
-fn show(state: &mut EState<State>, val: LogoValue) -> Result<(), String> {
+fn show<D: Delegate>(state: &mut EState<State<D>>, val: LogoValue) -> Result<(), String> {
     state.state.delegate.show(format!("{}", val).as_str());
     Ok(())
 }
 
-fn cg(state: &mut EState<State>) -> Result<(), String> {
+fn cg<D: Delegate>(state: &mut EState<State<D>>) -> Result<(), String> {
     let state = &mut state.state;
     state.data.turtle_pos = Pos{x: 0f64, y: 0f64};
     state.data.turtle_angle = 0f64;
@@ -57,43 +57,43 @@ fn cg(state: &mut EState<State>) -> Result<(), String> {
     Ok(())
 }
 
-fn clean(state: &mut EState<State>) -> Result<(), String> {
+fn clean<D: Delegate>(state: &mut EState<State<D>>) -> Result<(), String> {
     state.state.delegate.clear_graphics();
     Ok(())
 }
 
-fn fill(state: &mut EState<State>) -> Result<(), String> {
+fn fill<D: Delegate>(state: &mut EState<State<D>>) -> Result<(), String> {
     let state = &mut state.state;
     state.delegate.fill(state.data.turtle_pos, get_color(state.data.color_idx));
     Ok(())
 }
 
-fn pu(state: &mut EState<State>) -> Result<(), String> {
+fn pu<D: Delegate>(state: &mut EState<State<D>>) -> Result<(), String> {
     state.state.data.pen_state = PenState::Up;
     Ok(())
 }
 
-fn pd(state: &mut EState<State>) -> Result<(), String> {
+fn pd<D: Delegate>(state: &mut EState<State<D>>) -> Result<(), String> {
     state.state.data.pen_state = PenState::Down;
     Ok(())
 }
 
-fn pe(state: &mut EState<State>) -> Result<(), String> {
+fn pe<D: Delegate>(state: &mut EState<State<D>>) -> Result<(), String> {
     state.state.data.pen_state = PenState::Erase;
     Ok(())
 }
 
-fn rt(state: &mut EState<State>, val: f64) -> Result<(), String> {
+fn rt<D: Delegate>(state: &mut EState<State<D>>, val: f64) -> Result<(), String> {
     state.state.data.turtle_angle += val;
     Ok(())
 }
 
-fn lt(state: &mut EState<State>, val: f64) -> Result<(), String> {
+fn lt<D: Delegate>(state: &mut EState<State<D>>, val: f64) -> Result<(), String> {
     state.state.data.turtle_angle -= val;
     Ok(())
 }
 
-fn fd(state: &mut EState<State>, val: f64) -> Result<(), String> {
+fn fd<D: Delegate>(state: &mut EState<State<D>>, val: f64) -> Result<(), String> {
     let old_pos = state.state.data.turtle_pos;
     let angle = state.state.data.turtle_angle;
     let delta_x = angle.to_radians().sin() * val;
@@ -103,24 +103,24 @@ fn fd(state: &mut EState<State>, val: f64) -> Result<(), String> {
     Ok(())
 }
 
-fn bk(state: &mut EState<State>, val: f64) -> Result<(), String> {
+fn bk<D: Delegate>(state: &mut EState<State<D>>, val: f64) -> Result<(), String> {
     fd(state, -val)
 }
 
-fn heading(state: &mut EState<State>) -> Result<f64, String> {
+fn heading<D: Delegate>(state: &mut EState<State<D>>) -> Result<f64, String> {
     Ok(state.state.data.turtle_angle)
 }
 
-fn seth(state: &mut EState<State>, h: f64) -> Result<(), String> {
+fn seth<D: Delegate>(state: &mut EState<State<D>>, h: f64) -> Result<(), String> {
     state.state.data.turtle_angle = h;
     Ok(())
 }
 
-fn pos(state: &mut EState<State>) -> Result<Vec<f64>, String> {
+fn pos<D: Delegate>(state: &mut EState<State<D>>) -> Result<Vec<f64>, String> {
     Ok(vec![state.state.data.turtle_pos.x, state.state.data.turtle_pos.y])
 }
 
-fn setpos(state: &mut EState<State>, pos: Vec<f64>) -> Result<(), String> {
+fn setpos<D: Delegate>(state: &mut EState<State<D>>, pos: Vec<f64>) -> Result<(), String> {
     if pos.len() != 2 {
         Err("Setpos takes exactly 2 coordinates".to_string())
     }
@@ -130,52 +130,52 @@ fn setpos(state: &mut EState<State>, pos: Vec<f64>) -> Result<(), String> {
     }
 }
 
-fn xcoor(state: &mut EState<State>) -> Result<f64, String> {
+fn xcoor<D: Delegate>(state: &mut EState<State<D>>) -> Result<f64, String> {
     Ok(state.state.data.turtle_pos.x)
 }
 
-fn ycoor(state: &mut EState<State>) -> Result<f64, String> {
+fn ycoor<D: Delegate>(state: &mut EState<State<D>>) -> Result<f64, String> {
     Ok(state.state.data.turtle_pos.y)
 }
 
-fn setx(state: &mut EState<State>, x: f64) -> Result<(), String> {
+fn setx<D: Delegate>(state: &mut EState<State<D>>, x: f64) -> Result<(), String> {
     let y = state.state.data.turtle_pos.y;
     move_turtle(&mut state.state, Pos{x, y});
     Ok(())
 }
 
-fn sety(state: &mut EState<State>, y: f64) -> Result<(), String> {
+fn sety<D: Delegate>(state: &mut EState<State<D>>, y: f64) -> Result<(), String> {
     let x = state.state.data.turtle_pos.x;
     move_turtle(&mut state.state, Pos{x, y});
     Ok(())
 }
 
-fn home(state: &mut EState<State>) -> Result<(), String> {
+fn home<D: Delegate>(state: &mut EState<State<D>>) -> Result<(), String> {
     move_turtle(&mut state.state, Pos{ x: 0f64, y: 0f64 });
     state.state.data.turtle_angle = 0.0;
     Ok(())
 }
 
-fn setpensize(state: &mut EState<State>, pen_size: f64) -> Result<(), String> {
+fn setpensize<D: Delegate>(state: &mut EState<State<D>>, pen_size: f64) -> Result<(), String> {
     state.state.data.pen_size = pen_size;
     Ok(())
 }
 
-fn pensize(state: &mut EState<State>) -> Result<f64, String> {
+fn pensize<D: Delegate>(state: &mut EState<State<D>>) -> Result<f64, String> {
     Ok(state.state.data.pen_size)
 }
 
-fn ht(state: &mut EState<State>) -> Result<(), String> {
+fn ht<D: Delegate>(state: &mut EState<State<D>>) -> Result<(), String> {
     state.state.data.turtle_visible = false;
     Ok(())
 }
 
-fn st(state: &mut EState<State>) -> Result<(), String> {
+fn st<D: Delegate>(state: &mut EState<State<D>>) -> Result<(), String> {
     state.state.data.turtle_visible = true;
     Ok(())
 }
 
-fn setc(state: &mut EState<State>, color: i32) -> Result<(), String> {
+fn setc<D: Delegate>(state: &mut EState<State<D>>, color: i32) -> Result<(), String> {
     if color < 0 || color >= colors_count() {
         return Err(format!("Invalid color number {}", color));
     }
@@ -183,11 +183,11 @@ fn setc(state: &mut EState<State>, color: i32) -> Result<(), String> {
     Ok(())
 }
 
-fn color(state: &mut EState<State>) -> Result<i32, String> {
+fn color<D: Delegate>(state: &mut EState<State<D>>) -> Result<i32, String> {
     Ok(state.state.data.color_idx)
 }
 
-fn move_turtle(state: &mut State, pos: Pos) {
+fn move_turtle<D: Delegate>(state: &mut State<D>, pos: Pos) {
     let old_pos = state.data.turtle_pos;
     let w2 = state.data.canvas_width as f64 / 2f64;
     let h2 = state.data.canvas_height as f64 / 2f64;
@@ -231,7 +231,7 @@ fn move_turtle(state: &mut State, pos: Pos) {
     draw_line(state, old_pos, pos);
 }
 
-fn draw_line(state: &mut State, p1: Pos, p2: Pos) {
+fn draw_line<D: Delegate>(state: &mut State<D>, p1: Pos, p2: Pos) {
     let mut color = get_color(state.data.color_idx);
     if state.data.pen_state == PenState::Erase {
         color = LogoColor{r: 255, g: 255, b: 255};
@@ -272,7 +272,7 @@ fn test_move_turtle() {
     use crate::state::NoOpDelegate;
     use approx::assert_relative_eq;
 
-    let mut state = EState::new(State::new(800, 450, Box::new(NoOpDelegate{})));
+    let mut state = EState::new(State::new(800, 450, NoOpDelegate{}));
     fd(&mut state, 50.0).unwrap();
     assert_relative_eq!(state.state.data.turtle_pos.y, 50.0, epsilon = 0.00001);
     fd(&mut state, 400.0).unwrap();
