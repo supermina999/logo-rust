@@ -16,6 +16,7 @@ pub fn add_stdlib<S: 'static>(es: &mut EState<S>) {
     es.functions.insert("less?".to_string(), Function::from_fn2(less::<S>));
     es.functions.insert("int".to_string(), Function::from_fn1(int::<S>));
     es.functions.insert("log".to_string(), Function::from_fn1(log::<S>));
+    es.functions.insert("ln".to_string(), Function::from_fn1(ln::<S>));
     es.functions.insert("minus".to_string(), Function::from_fn1(minus::<S>));
     es.functions.insert("pi".to_string(), Function::from_fn(pi::<S>));
     es.functions.insert("power".to_string(), Function::from_fn2(power::<S>));
@@ -82,11 +83,11 @@ fn abs<S>(_: &mut EState<S>, val: f64) -> Result<f64, String> {
 }
 
 fn arctan<S>(_: &mut EState<S>, val: f64) -> Result<f64, String> {
-    Ok(val.atan())
+    Ok(val.atan().to_degrees())
 }
 
 fn cos<S>(_: &mut EState<S>, val: f64) -> Result<f64, String> {
-    Ok(val.cos())
+    Ok(val.to_radians().cos())
 }
 
 fn difference<S>(_: &mut EState<S>, a: f64, b: f64) -> Result<f64, String> {
@@ -113,6 +114,10 @@ fn log<S>(_: &mut EState<S>, val: f64) -> Result<f64, String> {
     Ok(val.log(10f64))
 }
 
+fn ln<S>(_: &mut EState<S>, val: f64) -> Result<f64, String> {
+    Ok(val.ln())
+}
+
 fn minus<S>(_: &mut EState<S>, val: f64) -> Result<f64, String> {
     Ok(-val)
 }
@@ -133,7 +138,7 @@ fn quotient<S>(_: &mut EState<S>, a: f64, b: f64) -> Result<f64, String> {
     Ok(a / b)
 }
 
-fn remainder<S>(_: &mut EState<S>, a: f64, b: f64) -> Result<f64, String> {
+fn remainder<S>(_: &mut EState<S>, a: i32, b: i32) -> Result<i32, String> {
     Ok(a % b)
 }
 
@@ -149,7 +154,7 @@ fn round<S>(_: &mut EState<S>, val: f64) -> Result<i32, String> {
 }
 
 fn sin<S>(_: &mut EState<S>, val: f64) -> Result<f64, String> {
-    Ok(val.sin())
+    Ok(val.to_radians().sin())
 }
 
 fn sqrt<S>(_: &mut EState<S>, val: f64) -> Result<f64, String> {
@@ -161,7 +166,7 @@ fn sum<S>(_: &mut EState<S>, x: f64, y: f64) -> Result<f64, String> {
 }
 
 fn tan<S>(_: &mut EState<S>, val: f64) -> Result<f64, String> {
-    Ok(val.tan())
+    Ok(val.to_radians().tan())
 }
 
 
@@ -189,7 +194,7 @@ fn empty<S>(_: &mut EState<S>, val: Vec<LogoValue>) -> Result<bool, String> {
     Ok(val.is_empty())
 }
 
-fn equal<S>(_: &mut EState<S>, a: Vec<LogoValue>, b: Vec<LogoValue>) -> Result<bool, String> {
+fn equal<S>(_: &mut EState<S>, a: LogoValue, b: LogoValue) -> Result<bool, String> {
     Ok(a == b)
 }
 

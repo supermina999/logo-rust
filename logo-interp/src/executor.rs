@@ -255,21 +255,18 @@ fn test_execution() {
         Ok(())
     }));
 
-    let result = execute_str(&mut state, "", "add 5 repeat 4 [add 1] add 10");
-    assert!(result.is_ok());
+    execute_str(&mut state, "", "add 5 repeat 4 [add 1] add 10").unwrap();
     assert_eq!(state.state.total, 19);
 
     state.state.total = 0;
-    let result = execute_str(&mut state, "", "make 'hi' 5 add :hi add thing 'hi'");
-    assert!(result.is_ok());
+    execute_str(&mut state, "", "make 'hi' 5 add :hi add thing 'hi'").unwrap();
     assert_eq!(state.state.total, 10);
 
     state.state.total = 0;
-    let result = execute_str(&mut state, "to add4 add 4 end \
+    execute_str(&mut state, "to add4 add 4 end \
         to add_double :x add :x add :x end \
         to double :x output sum :x :x end",
- "add4 add_double 6 add double 3");
-    assert!(result.is_ok());
+ "add4 add_double 6 add double 3").unwrap();
     assert_eq!(state.state.total, 22);
 }
 
@@ -287,27 +284,57 @@ fn test_execution_math() {
         Ok(())
     }));
 
-    let result = execute_str(&mut state, "", "return 2 + 3");
-    assert!(result.is_ok());
+    execute_str(&mut state, "", "return 2 + 3").unwrap();
     assert_eq!(state.state.result, 5);
 
-    let result = execute_str(&mut state, "", "return product 2 3 + sum 4 5");
-    assert!(result.is_ok());
+    execute_str(&mut state, "", "return product 2 3 + sum 4 5").unwrap();
     assert_eq!(state.state.result, 24);
 
-    let result = execute_str(&mut state, "", "return (product 2 3) + (sum 4 5)");
-    assert!(result.is_ok());
+    execute_str(&mut state, "", "return (product 2 3) + (sum 4 5)").unwrap();
     assert_eq!(state.state.result, 15);
 
-    let result = execute_str(&mut state, "", "return 3 + 4 * 5 + 2");
-    assert!(result.is_ok());
+    execute_str(&mut state, "", "return 3 + 4 * 5 + 2").unwrap();
     assert_eq!(state.state.result, 25);
 
-    let result = execute_str(&mut state, "", "return (3 + 4) * (5 + 2)");
-    assert!(result.is_ok());
+    execute_str(&mut state, "", "return (3 + 4) * (5 + 2)").unwrap();
     assert_eq!(state.state.result, 49);
 
-    let result = execute_str(&mut state, "", "return (1 + (3 + 4)) * ((5 + 2) + 2)");
-    assert!(result.is_ok());
+    execute_str(&mut state, "", "return (1 + (3 + 4)) * ((5 + 2) + 2)").unwrap();
     assert_eq!(state.state.result, 72);
+}
+
+#[test]
+fn test_execution_comparison() {
+    use crate::stdlib::*;
+
+    struct S {
+        result: bool
+    }
+    let mut state = EState::new(S{result: false});
+    add_stdlib(&mut state);
+    state.functions.insert("return".to_string(), Function::from_proc1(|s: &mut EState<S>, x: bool| -> Result<(), String> {
+        s.state.result = x;
+        Ok(())
+    }));
+
+    execute_str(&mut state, "", "return 2 = 2").unwrap();
+    assert_eq!(state.state.result, true);
+
+    execute_str(&mut state, "", "return 2 = 4 / 2").unwrap();
+    assert_eq!(state.state.result, true);
+
+    execute_str(&mut state, "", "return 1 = pi / pi").unwrap();
+    assert_eq!(state.state.result, true);
+
+    execute_str(&mut state, "", "return 1/3 = 2/6").unwrap();
+    assert_eq!(state.state.result, true);
+
+    execute_str(&mut state, "", "return 1/4 < 1/5").unwrap();
+    assert_eq!(state.state.result, false);
+
+    execute_str(&mut state, "", "return (ln 1) > 0").unwrap();
+    assert_eq!(state.state.result, false);
+
+    execute_str(&mut state, "", "return (1 / 0) > 0").unwrap();
+    assert_eq!(state.state.result, false);
 }
