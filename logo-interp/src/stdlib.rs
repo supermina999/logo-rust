@@ -67,7 +67,7 @@ pub fn add_stdlib<S: 'static>(es: &mut EState<S>) {
 
 fn repeat<S>(state: &mut EState<S>, n: i32, cmd: Vec<LogoValue>) -> Result<(), String> {
     for _ in 0..n {
-        execute(state, &cmd)?;
+        execute(state, cmd.clone())?;
     }
     Ok(())
 }
@@ -292,17 +292,17 @@ fn not<S>(_: &mut EState<S>, a: bool) -> Result<bool, String> {
 
 fn if_fn<S>(state: &mut EState<S>, a: bool, cmd: Vec<LogoValue>) -> Result<(), String> {
     if a {
-        execute(state, &cmd)?;
+        execute(state, cmd)?;
     }
     Ok(())
 }
 
 fn if_else_fn<S>(state: &mut EState<S>, a: bool, cmd_true: Vec<LogoValue>, cmd_false: Vec<LogoValue>) -> Result<(), String> {
     if a {
-        execute(state, &cmd_true)?;
+        execute(state, cmd_true)?;
     }
     else {
-        execute(state, &cmd_false)?;
+        execute(state, cmd_false)?;
     }
     Ok(())
 }

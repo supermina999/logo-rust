@@ -1,14 +1,17 @@
+use std::collections::HashMap;
+use std::mem::swap;
 use crate::core::{LogoValue, Word};
 use crate::executor_state::*;
 use crate::parser;
 
 pub fn execute_str<S>(state: &mut EState<S>, proc_source: &str, source: &str) -> Result<(), String> {
     state.logo_procedures = parser::parse_procedures(proc_source)?;
-    execute(state, &parser::parse(source)?)
+    execute(state, parser::parse(source)?)
 }
 
-pub fn execute<S>(state: &mut EState<S>, source: &Vec<LogoValue>) -> Result<(), String> {
-    let mut it = source.iter();
+pub fn execute<S>(state: &mut EState<S>, source: Vec<LogoValue>) -> Result<(), String> {
+    let transformed_source = math_transform(source)?;
+    let mut it = transformed_source.iter();
     while it.len() > 0 {
         match execute_expr(state, &mut it)? {
             Some(val) => return Err(format!("Don't know what to do with {}", val)),
@@ -18,7 +21,7 @@ pub fn execute<S>(state: &mut EState<S>, source: &Vec<LogoValue>) -> Result<(), 
     Ok(())
 }
 
-pub fn execute_expr<'a, S>(state: &mut EState<S>, it: &mut impl Iterator<Item = &'a LogoValue>) -> Result<Option<LogoValue>, String>
+fn execute_expr<'a, S>(state: &mut EState<S>, it: &mut impl Iterator<Item = &'a LogoValue>) -> Result<Option<LogoValue>, String>
 {
     let cmd = it.next();
     if cmd.is_none() {
@@ -69,18 +72,18 @@ pub fn execute_expr<'a, S>(state: &mut EState<S>, it: &mut impl Iterator<Item = 
                 }
                 state.vars.insert(arg_name.clone(), expr_result.unwrap());
             }
-            let proc_result = execute(state, &logo_proc.code);
+            let proc_result = execute(state, logo_proc.code);
             restore_vars(state, backup);
-            match proc_result {
+            return match proc_result {
                 Err(err) => {
                     if err == "Output" {
                         let output = state.output.clone();
                         state.output = None;
                         return Ok(output);
                     }
-                    return Err(err);
+                    Err(err)
                 },
-                Ok(()) => return Ok(None)
+                Ok(()) => Ok(None)
             }
         }
         return Err(format!("Don't know what to do with {}", cmd))
@@ -114,6 +117,130 @@ fn restore_vars<S>(state: &mut EState<S>, backup: Vec<(String, Option<LogoValue>
     }
 }
 
+fn math_transform(source: Vec<LogoValue>) -> Result<Vec<LogoValue>, String> {
+    let mut tree = BracketTree::parse(source)?;
+    process_math_signs(&mut tree, &HashMap::from([
+        ("*".to_string(), "product".to_string()),
+        ("/".to_string(), "quotient".to_string()),
+    ]))?;
+    process_math_signs(&mut tree, &HashMap::from([
+        ("+".to_string(), "sum".to_string()),
+        ("-".to_string(), "difference".to_string()),
+    ]))?;
+    process_math_signs(&mut tree, &HashMap::from([
+        (">".to_string(), "greater?".to_string()),
+        ("<".to_string(), "less?".to_string()),
+        ("=".to_string(), "equal?".to_string()),
+    ]))?;
+    Ok(tree.to_list())
+}
+
+fn process_math_signs(tree: &mut BracketTree, signs: &HashMap<String, String>) -> Result<(), String> {
+    tree.process(&|nodes: Vec<BracketTreeChild>| -> Result<Vec<BracketTreeChild>, String> {
+        let mut result = Vec::new();
+        let mut it = nodes.into_iter();
+        while let Some(node) = it.next() {
+            if let BracketTreeChild::Value(val) = &node {
+                if let LogoValue::Word(word) = val {
+                    if let Some(sing_op) = signs.get(word.0.as_str()) {
+                        let prev = match result.pop() {
+                            Some(val) => val,
+                            None => return Err(format!("Missing first argument for {}", word.0))
+                        };
+                        let next = match it.next() {
+                            Some(val) => val,
+                            None => return Err(format!("Missing second argument for {}", word.0))
+                        };
+                        let subtree = BracketTree{
+                            children: vec![
+                                BracketTreeChild::Value(LogoValue::Word(Word(sing_op.clone()))),
+                                prev,
+                                next
+                            ]
+                        };
+                        result.push(BracketTreeChild::Tree(Box::new(subtree)));
+                        continue;
+                    }
+                }
+            }
+            result.push(node);
+        }
+        Ok(result)
+    })
+}
+
+struct BracketTree {
+    children: Vec<BracketTreeChild>
+}
+
+enum BracketTreeChild {
+    Value(LogoValue),
+    Tree(Box<BracketTree>)
+}
+
+impl BracketTree {
+    fn new() -> Self {
+        BracketTree {children: Vec::new()}
+    }
+
+    fn parse(list: Vec<LogoValue>) -> Result<Self, String> {
+        let mut stack = Vec::new();
+        stack.push(BracketTree::new());
+        for el in list {
+            if let LogoValue::Word(word) = &el {
+                if word.0 == "(" {
+                    stack.push(BracketTree::new());
+                    continue;
+                }
+                else if word.0 == ")" {
+                    if stack.len() == 1 {
+                        return Err("Missing corresponding opening bracket for ')'".to_string());
+                    }
+                    let last_stack = stack.pop().unwrap();
+                    stack.last_mut().unwrap().children.push(BracketTreeChild::Tree(Box::new(last_stack)));
+                    continue;
+                }
+            }
+            stack.last_mut().unwrap().children.push(BracketTreeChild::Value(el));
+        }
+        if stack.len() > 1 {
+            return Err("Missing corresponding closing bracket for '('".to_string());
+        }
+        Ok(stack.pop().unwrap())
+    }
+
+    fn into_list(self, list: &mut Vec<LogoValue>) {
+        for child in self.children {
+            match child {
+                BracketTreeChild::Value(val) => {
+                    list.push(val)
+                },
+                BracketTreeChild::Tree(tree) => {
+                    tree.into_list(list);
+                }
+            }
+        }
+    }
+
+    fn to_list(self) -> Vec<LogoValue> {
+        let mut result = Vec::new();
+        self.into_list(&mut result);
+        result
+    }
+
+    fn process(&mut self, f: &impl Fn(Vec<BracketTreeChild>) -> Result<Vec<BracketTreeChild>, String>) -> Result<(), String> {
+        let mut tmp = Vec::new();
+        swap(&mut tmp, &mut self.children);
+        self.children = f(tmp)?;
+        for child in &mut self.children {
+            if let BracketTreeChild::Tree(tree) = child {
+                tree.process(f)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 #[test]
 fn test_execution() {
     use crate::stdlib::*;
@@ -144,4 +271,43 @@ fn test_execution() {
  "add4 add_double 6 add double 3");
     assert!(result.is_ok());
     assert_eq!(state.state.total, 22);
+}
+
+#[test]
+fn test_execution_math() {
+    use crate::stdlib::*;
+
+    struct S {
+        result: i32
+    }
+    let mut state = EState::new(S{result: 0});
+    add_stdlib(&mut state);
+    state.functions.insert("return".to_string(), Function::from_proc1(|s: &mut EState<S>, x: i32| -> Result<(), String> {
+        s.state.result = x;
+        Ok(())
+    }));
+
+    let result = execute_str(&mut state, "", "return 2 + 3");
+    assert!(result.is_ok());
+    assert_eq!(state.state.result, 5);
+
+    let result = execute_str(&mut state, "", "return product 2 3 + sum 4 5");
+    assert!(result.is_ok());
+    assert_eq!(state.state.result, 24);
+
+    let result = execute_str(&mut state, "", "return (product 2 3) + (sum 4 5)");
+    assert!(result.is_ok());
+    assert_eq!(state.state.result, 15);
+
+    let result = execute_str(&mut state, "", "return 3 + 4 * 5 + 2");
+    assert!(result.is_ok());
+    assert_eq!(state.state.result, 25);
+
+    let result = execute_str(&mut state, "", "return (3 + 4) * (5 + 2)");
+    assert!(result.is_ok());
+    assert_eq!(state.state.result, 49);
+
+    let result = execute_str(&mut state, "", "return (1 + (3 + 4)) * ((5 + 2) + 2)");
+    assert!(result.is_ok());
+    assert_eq!(state.state.result, 72);
 }
