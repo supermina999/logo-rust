@@ -71,8 +71,10 @@ impl Delegate for DrawingDelegate {
 
     fn show(&mut self, _message: &str) {
         #[cfg(target_arch = "wasm32")] {
-            let this = JsValue::null();
-            let _ = self.show_fn.borrow().as_ref().unwrap().call1(&this, &JsValue::from(_message));
+            if let Some(show_fn) = self.show_fn.borrow().as_ref() {
+                let this = JsValue::null();
+                let _ = show_fn.call1(&this, &JsValue::from(_message));
+            }
         }
     }
 }
