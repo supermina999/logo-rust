@@ -3,7 +3,7 @@ use crate::core::*;
 
 lazy_static! {
     static ref TERMINATOR_CHARS: HashSet<char>
-        = HashSet::from(['[', ']', '(', ')', '+', '-', '*', '/', '=']);
+        = HashSet::from(['[', ']', '(', ')', '*', '/', '=']);
 }
 
 fn is_terminator_char(ch: char) -> bool {
@@ -82,7 +82,38 @@ pub fn parse(source: &str) -> Result<Vec<LogoValue>, String> {
     if list_stack.len() > 1 {
         return Err(String::from("Missing closing bracket"));
     }
-    return Ok(list_stack.pop().unwrap());
+    return Ok(process_plus_minus(list_stack.pop().unwrap()));
+}
+
+fn process_plus_minus(list: Vec<LogoValue>) -> Vec<LogoValue> {
+    let mut result = Vec::with_capacity(list.len());
+    for val in list {
+        match val {
+            LogoValue::String(s) => result.push(LogoValue::String(s)),
+            LogoValue::List(sublist) => result.push(LogoValue::List(process_plus_minus(sublist))),
+            LogoValue::Word(word) => {
+                let mut cur = String::new();
+                for ch in word.0.chars() {
+                    if ch != '+' && ch != '-' {
+                        cur.push(ch);
+                        continue;
+                    }
+                    if cur.is_empty() {
+                        cur.push(ch);
+                    }
+                    else {
+                        result.push(LogoValue::Word(Word(cur)));
+                        result.push(LogoValue::Word(Word(ch.to_string())));
+                        cur = String::new();
+                    }
+                }
+                if !cur.is_empty() {
+                    result.push(LogoValue::Word(Word(cur)));
+                }
+            }
+        }
+    }
+    result
 }
 
 pub fn parse_procedures(source: &str) -> Result<HashMap<String, LogoProcedure>, String> {
@@ -191,4 +222,31 @@ fn test_errors() {
     assert_eq!(result, Err("Not matched closing bracket".to_string()));
     let result = parse("blah 'long string");
     assert_eq!(result, Err("Missing closing quote".to_string()));
+}
+
+#[test]
+fn test_math() {
+    let result = parse("2+2");
+    let expected = Ok(vec![
+        LogoValue::Word(Word("2".to_string())),
+        LogoValue::Word(Word("+".to_string())),
+        LogoValue::Word(Word("2".to_string())),
+    ]);
+    assert_eq!(result, expected);
+    let result = parse("2 + 2");
+    assert_eq!(result, expected);
+
+    let result = parse("2 +2");
+    let expected = Ok(vec![
+        LogoValue::Word(Word("2".to_string())),
+        LogoValue::Word(Word("+2".to_string())),
+    ]);
+    assert_eq!(result, expected);
+
+    let result = parse("2 -2");
+    let expected = Ok(vec![
+        LogoValue::Word(Word("2".to_string())),
+        LogoValue::Word(Word("-2".to_string())),
+    ]);
+    assert_eq!(result, expected);
 }

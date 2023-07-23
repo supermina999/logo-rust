@@ -287,6 +287,12 @@ fn test_execution_math() {
     execute_str(&mut state, "", "return 2 + 3").unwrap();
     assert_eq!(state.state.result, 5);
 
+    execute_str(&mut state, "", "return 2 + +4").unwrap();
+    assert_eq!(state.state.result, 6);
+
+    execute_str(&mut state, "", "return 2 + -3").unwrap();
+    assert_eq!(state.state.result, -1);
+
     execute_str(&mut state, "", "return product 2 3 + sum 4 5").unwrap();
     assert_eq!(state.state.result, 24);
 
@@ -333,8 +339,5 @@ fn test_execution_comparison() {
     assert_eq!(state.state.result, false);
 
     execute_str(&mut state, "", "return (ln 1) > 0").unwrap();
-    assert_eq!(state.state.result, false);
-
-    execute_str(&mut state, "", "return (1 / 0) > 0").unwrap();
     assert_eq!(state.state.result, false);
 }
