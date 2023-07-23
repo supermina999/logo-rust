@@ -11,7 +11,7 @@ use logo_runtime::drawinglib::add_drawinglib;
 use logo_runtime::logo_interp::executor::execute_str;
 use logo_runtime::logo_interp::executor_state::EState;
 use logo_runtime::logo_interp::stdlib::add_stdlib;
-use logo_runtime::state::{Delegate, State, StateData};
+use logo_runtime::state::{Delegate, State};
 use crate::fill::flood_fill;
 
 pub struct DrawingDelegate {
@@ -80,47 +80,18 @@ pub struct Context {
 
 impl Context {
     pub fn new(width: i32, height: i32) -> Self {
-        context_create(width, height)
+        let dt = DrawTarget::new(width, height);
+        let dd = DrawingDelegate { dt, show_fn: None };
+        let mut state = EState::new(State::new(width, height, dd));
+        state.state.delegate.clear_graphics();
+        add_stdlib(&mut state);
+        add_drawinglib(&mut state);
+        return Self {state}
     }
 
     pub fn render(&mut self, proc_source: &str, cmd_source: &str) -> Result<Vec<u8>, String> {
-        context_render(self, proc_source, cmd_source)
+        execute_str(&mut self.state, proc_source, cmd_source)?;
+        Ok(Vec::from(self.state.state.delegate.dt.get_data_u8()))
     }
 }
 
-#[wasm_bindgen]
-pub fn context_create(width: i32, height: i32) -> Context {
-    let dt = DrawTarget::new(width, height);
-    let dd = DrawingDelegate { dt, show_fn: None };
-    let mut state = EState::new(State::new(width, height, dd));
-    state.state.delegate.clear_graphics();
-    add_stdlib(&mut state);
-    add_drawinglib(&mut state);
-    return Context {state}
-}
-
-#[wasm_bindgen]
-pub fn context_render(context: &mut Context, proc_source: &str, cmd_source: &str) -> Result<Vec<u8>, String> {
-    execute_str(&mut context.state, proc_source, cmd_source)?;
-    Ok(Vec::from(context.state.state.delegate.dt.get_data_u8()))
-}
-
-#[wasm_bindgen]
-pub fn context_get_state(context: &mut Context) -> StateData {
-    context.state.state.data
-}
-
-#[wasm_bindgen]
-pub fn render(proc_source: &str, cmd_source: &str, width: i32, height: i32) -> Result<Vec<u8>, String> {
-    let mut context = Context::new(width, height);
-    context.render(proc_source, cmd_source)
-}
-
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen]
-pub fn context_set_show_fn(context: &mut Context, f: js_sys::Function) {
-    context.state.state.delegate.show_fn = Some(Box::new(move |msg: &str| {
-        let this = JsValue::null();
-        let _ = f.call1(&this, &JsValue::from(msg));
-    }));
-}

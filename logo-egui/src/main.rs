@@ -2,7 +2,7 @@ use eframe::emath::Align;
 use egui::{ColorImage, Direction, Layout, ScrollArea};
 use egui::TextEdit;
 use egui_extras::{RetainedImage, Size, StripBuilder};
-use logo_img_render::Context;
+use logo_renderer::Context;
 
 pub struct LogoApp {
     context: Context,

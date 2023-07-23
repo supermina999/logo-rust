@@ -1,7 +1,10 @@
 [workspace]
-members = ["logo-interp", "logo-runtime", "logo-img-render", "logo-egui"]
+members = ["logo-interp", "logo-runtime", "logo-renderer", "logo-egui", "logo-web"]
 resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
+
+[workspace.dependencies]
+wasm-bindgen = "0.2.74"

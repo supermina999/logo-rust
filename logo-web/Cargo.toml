@@ -1,11 +1,12 @@
 [package]
-name = "logo-runtime"
+name = "logo-web"
 version.workspace = true
 edition.workspace = true
 
-[dependencies]
-logo-interp = {path = '../logo-interp'}
-wasm-bindgen = { workspace = true }
+[lib]
+crate-type = ["cdylib"]
 
-[dev-dependencies]
-approx = "0.5.1"
+[dependencies]
+logo-renderer = {path = '../logo-renderer'}
+wasm-bindgen = { workspace = true }
+js-sys = "0.3.64"
