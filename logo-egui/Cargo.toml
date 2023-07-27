@@ -9,7 +9,7 @@ authors.workspace = true
 description = "Simple GUI for Logo programming language, primarily used for testing & debugging purposes"
 
 [dependencies]
-logo-renderer = {path = '../logo-renderer'}
+logo-renderer = { workspace = true }
 egui = "0.22.0"
 egui_extras = "0.22.0"
 eframe = "0.22.0"

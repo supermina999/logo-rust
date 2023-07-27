@@ -9,7 +9,7 @@ authors.workspace = true
 description = "Implements the runtime for graphic functionality of Logo programming language"
 
 [dependencies]
-logo-interp = {path = '../logo-interp'}
+logo-interp = { workspace = true }
 wasm-bindgen = { workspace = true }
 
 [dev-dependencies]

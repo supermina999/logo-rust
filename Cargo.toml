@@ -11,4 +11,7 @@ repository = "https://github.com/supermina999/logo-rust"
 authors = ["Stanislav Minakov"]
 
 [workspace.dependencies]
+logo-interp = {path = 'logo-interp', version = "0.1.0"}
+logo-runtime = {path = 'logo-runtime', version = "0.1.0"}
+logo-renderer = {path = 'logo-renderer', version = "0.1.0"}
 wasm-bindgen = "0.2.74"

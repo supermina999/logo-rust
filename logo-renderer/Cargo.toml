@@ -9,6 +9,6 @@ authors.workspace = true
 description = "Implements a simple CPU renderer for logo-runtime crate"
 
 [dependencies]
-logo-runtime = {path = '../logo-runtime'}
-raqote = { version = "0.8.2", default-features = false, features = ["png"] }
+logo-runtime = { workspace = true }
+raqote = { version = "0.8.2", default-features = false }
 wasm-bindgen = { workspace = true }
