@@ -2,6 +2,11 @@
 name = "logo-web"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Web-based IDE for Logo programming language"
 
 [lib]
 crate-type = ["cdylib"]
